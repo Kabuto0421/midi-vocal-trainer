@@ -16,7 +16,26 @@ const CLARITY_THRESHOLD = 0.82;
 export async function startRecording(
   onFinished: (take: RecordingTake) => void,
 ): Promise<{ recorder: RecorderHandle; startedAt: number }> {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  if (!window.isSecureContext) {
+    throw new Error("マイクはHTTPSまたはlocalhost上でのみ利用できます。");
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error("このブラウザはマイク録音に対応していません。");
+  }
+
+  let stream: MediaStream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    });
+  } catch (error) {
+    throw new Error(formatMicrophoneError(error));
+  }
+
   const chunks: BlobPart[] = [];
   const recorder = new MediaRecorder(stream);
   const startedAt = performance.now();
@@ -49,6 +68,32 @@ export async function startRecording(
       },
     },
   };
+}
+
+function formatMicrophoneError(error: unknown): string {
+  if (error instanceof DOMException) {
+    if (error.name === "NotAllowedError" || error.name === "SecurityError") {
+      return "マイクへのアクセスが拒否されています。ブラウザのサイト設定と、OSのプライバシー設定でこのブラウザのマイク使用を許可してから、もう一度録音してください。";
+    }
+    if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
+      return "利用できるマイクが見つかりません。入力デバイスを接続または選択してから、もう一度録音してください。";
+    }
+    if (error.name === "NotReadableError" || error.name === "TrackStartError") {
+      return "マイクを開始できません。別のアプリがマイクを使用していないか確認してから、もう一度録音してください。";
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    if (/not supported/i.test(error.message)) {
+      return "この環境ではマイク録音を開始できません。ChromeやSafariなどの通常ブラウザで開き、ブラウザとOSのマイク権限を許可してください。";
+    }
+    if (/permission denied/i.test(error.message)) {
+      return "マイクへのアクセスがシステム側で拒否されています。OSのプライバシー設定でこのブラウザのマイク使用を許可してから、もう一度録音してください。";
+    }
+    return error.message;
+  }
+
+  return "マイクの開始に失敗しました。ブラウザとOSのマイク権限を確認してください。";
 }
 
 export async function analyzeTake(

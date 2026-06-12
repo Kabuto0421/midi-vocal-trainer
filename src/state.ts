@@ -57,7 +57,7 @@ export function transition(state: AppState, event: AppEvent): AppState {
     return {
       type: "Error",
       message: event.message,
-      recoverTo: state.type === "LoadingMidi" ? { type: "Empty" } : state,
+      recoverTo: getRecoverState(state),
     };
   }
 
@@ -170,6 +170,19 @@ export function transition(state: AppState, event: AppEvent): AppState {
       if (event.type === "ResetRequested") {
         return { type: "Empty" };
       }
+      return state;
+  }
+}
+
+function getRecoverState(state: AppState): AppState {
+  switch (state.type) {
+    case "LoadingMidi":
+      return { type: "Empty" };
+    case "CountIn":
+    case "Recording":
+    case "Analyzing":
+      return { type: "Ready", session: state.session };
+    default:
       return state;
   }
 }

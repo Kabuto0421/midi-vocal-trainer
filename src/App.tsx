@@ -286,6 +286,9 @@ function ReadyPanel({
       <div className="control-panel">
         <h2>録音準備完了</h2>
         <p>静かな環境で、表示されたノートラインに合わせて単音で歌ってください。</p>
+        <p className="hint-text">
+          録音にはブラウザとOSの両方でマイク許可が必要です。
+        </p>
         <button className="primary-button" onClick={onStart}>
           <Mic size={20} />
           録音開始
