@@ -2,6 +2,10 @@
 
 MIDIの正解ノートと録音した声のピッチを時間軸で照合する、ボーカル練習用Webアプリです。
 
+## Demo
+
+https://midi-vocal-trainer.vercel.app
+
 ## Features
 
 - MIDIファイルのアップロード
